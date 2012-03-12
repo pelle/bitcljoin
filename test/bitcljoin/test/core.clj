@@ -1,6 +1,7 @@
 (ns bitcljoin.test.core
   (:use [bitcljoin.core])
-  (:use [clojure.test]))
+  (:use [clojure.test])
+  (:use [clojure.java.io :only [as-file delete-file]]))
 
 
 (deftest should-have-default-net
@@ -16,4 +17,21 @@
   (is (instance? com.google.bitcoin.core.Address (to-address "17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL")) "Should create address from string"))
 
 (deftest should-create-wallet
-  (is (instance? com.google.bitcoin.core.Wallet (create-wallet))))
+  (let [wal (create-wallet)]
+    (is (instance? com.google.bitcoin.core.Wallet wal))
+    (let [kc (keychain wal)
+          kp (first kc)]
+      (is (= 1 (count kc)))
+      (is (instance? com.google.bitcoin.core.ECKey kp)))))
+  
+
+(deftest should-create-and-load-wallet
+  (let [ filename "./test.wallet"
+         _ (delete-file (as-file filename) true)
+         wal (wallet filename)]
+    (is (instance? com.google.bitcoin.core.Wallet wal))
+    (let [kc (keychain wal)
+          kp (first kc)]
+      (is (= 1 (count kc)))
+      (is (instance? com.google.bitcoin.core.ECKey kp)
+      (is (= (str kp) (str (first (keychain (wallet filename))))))))))
