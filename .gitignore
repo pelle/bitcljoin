@@ -7,3 +7,12 @@
 /checkouts
 /.lein-deps-sum
 /test.wallet
+
+*.db
+
+*.blockchain
+
+target/
+*.bup
+
+*.wallet1

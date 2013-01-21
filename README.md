@@ -2,6 +2,8 @@
 
 Start of a Clojure wrapper for BitCoinJ http://www.bitcoinj.org/
 
+This is absolutely a work in progress.
+
 ## Usage
 
 Create a keypair:
@@ -24,12 +26,19 @@ Get the keychain of a wallet:
 
     (keychain (wallet "./mywallet.wallet"))
 
+Download block-chain and query it:
+
+    (def bs (file-block-store))
+    (def bc (block-chain bs))
+    (def pg (peer-group bc))
+    (start pg) ;; start downloading
+    (take 10 (stored-blocks bs))
+
 TODO:
 
-* Blockchains
-* PeerGroups
 * Transactions
 * Create transactions
+
 
 ## License
 
