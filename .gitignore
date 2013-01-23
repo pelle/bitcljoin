@@ -16,3 +16,5 @@ target/
 *.bup
 
 *.wallet1
+
+.lein-repl-history

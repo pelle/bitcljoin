@@ -1,5 +1,7 @@
 (ns bitcljoin.core
-  (:use [clojure.java.io :only [as-file]]))
+  (:use [clojure.java.io :only [as-file]]
+        [bux.currencies :only [BTC]])
+  (:require [lamina.core :as lamina]))
 
 
 (defn prodNet [] (com.google.bitcoin.core.NetworkParameters/prodNet))
@@ -86,12 +88,15 @@
 (defn bc->store
   "returns the block store used by a block chain"
   [bc]
-  (.getStore bc))
+  (.getBlockStore bc))
 
 (defn sha256hash
   "Note this doesn't perform a hash. It just wraps a string within the Sha256Hash class"
   [hash-string]
   (com.google.bitcoin.core.Sha256Hash. hash-string))
+
+(defn genesis-hash []
+  (sha256hash "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"))
 
 (defn header
   "Actual block header from a stored block"
@@ -107,6 +112,46 @@
   "Lazy sequence of block headers from the head and back"
   [bs] (map header (stored-blocks bs)))
 
+(defn coin-base? [tx]
+  (.isCoinBase tx))
+
+(defn tx-inputs [tx]
+  (.getInputs tx))
+
+(defn regular-inputs
+  "non coinbase inputs"
+  [tx]
+  (filter #(not (coin-base? %)) (tx-inputs tx)))
+
+(defn input-addresses
+  "Get the from addresses for a transaction"
+  [tx]
+  (map #(.getFromAddress %) (regular-inputs tx)))
+
+(defn tx-outputs [tx]
+  (.getOutputs tx))
+
+(defn output-from-addresses
+  "Get the from addresses for a transaction"
+  [tx]
+  (map #(.getFromAddress %) (regular-inputs tx)))
+
+(defn output-to-addresses
+  "Get the from addresses for a transaction"
+  [tx]
+  (map #(.getToAddress %) (regular-inputs tx)))
+
+
+(def tx-channel
+  (lamina/channel))
+
+(def block-channel
+  (lamina/channel))
+
+(def coin-base-channel
+  (lamina/filter* coin-base? tx-channel))
+
+
 (defn peer-listener
   [pg]
   (.addEventListener pg
@@ -115,7 +160,10 @@
 (defn block-chain-listener []
   (proxy
       [com.google.bitcoin.core.BlockChainListener][]
-      (isTransactionRelevant [tx] true)))
+      (isTransactionRelevant [tx] true)
+      (notifyNewBestBlock [block] (lamina/enqueue block-channel block))
+      (receiveFromBlock [tx block block-type] (lamina/enqueue tx-channel tx))
+      ))
 
 (defn start
   "start downloading regular block chain"
@@ -130,4 +178,8 @@
 
 (defn start-full
   "start downloading full block chain"
-  [] (start (peer-group (full-block-chain))))
+  [] (let [bc (full-block-chain)
+           _  (.addListener bc (block-chain-listener))]
+       (start (peer-group bc))
+        bc))
+
