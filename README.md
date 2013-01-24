@@ -11,7 +11,7 @@ If you're interested please email me.
 Add the following to your project.clj
 
 ```clojure
-[bitcljoin "0.1.0"]
+[bitcljoin "0.1.0-SNAPSHOT"]
 ```
 
 Create a keypair:
