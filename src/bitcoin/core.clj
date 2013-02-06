@@ -4,8 +4,8 @@
   (:require [lamina.core :as lamina]))
 
 
-(defn prodNet [] (com.google.bitcoin.core.NetworkParameters/prodNet))
-(defn testNet [] (com.google.bitcoin.core.NetworkParameters/testNet))
+(defn prodNet []  (com.google.bitcoin.core.NetworkParameters/prodNet))
+(defn testNet []  (com.google.bitcoin.core.NetworkParameters/testNet))
 (def network )
 
 (defn net []
@@ -18,10 +18,14 @@
 (defn create-keypair []
   (com.google.bitcoin.core.ECKey. ))
 
-(defn encode-private [kp]
+(defn ->private
+  "encodes private keys in the form used by the Bitcoin dumpprivkey command"
+  [kp]
   (str (.getPrivateKeyEncoded kp network)))
 
-(defn decode-private [s]
+(defn ->kp
+  "decodes private keys in the form used by the Bitcoin dumpprivkey command"
+  [s]
   (.getKey (com.google.bitcoin.core.DumpedPrivateKey. network s)))
 
 (defn keychain [w]
@@ -46,16 +50,16 @@
             w)))))
 
 (defprotocol Addressable
-  (to-address [k] [k network]))
+  (->address [k] [k network]))
 
 (extend-type com.google.bitcoin.core.ECKey Addressable
-  (to-address
-    ([keypair] (to-address keypair (net)))
+  (->address
+    ([keypair] (->address keypair (net)))
     ([keypair network] (.toAddress keypair network))))
 
 (extend-type String Addressable
-  (to-address
-    ([keypair] (to-address keypair (net)))
+  (->address
+    ([keypair] (->address keypair (net)))
     ([keypair network] (new com.google.bitcoin.core.Address network keypair))))
 
 

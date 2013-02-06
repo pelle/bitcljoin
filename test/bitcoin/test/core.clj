@@ -12,15 +12,15 @@
     (is (instance? com.google.bitcoin.core.ECKey kp) "Should create key")))
 
 (deftest should-decode-key
-  (let [kp (decode-private "5KQ3SHTDHfU6XhBp7sSCbUoMpiZQKfKc7jVjAb6rHiegq1m2VWq")]
+  (let [kp (->kp "5KQ3SHTDHfU6XhBp7sSCbUoMpiZQKfKc7jVjAb6rHiegq1m2VWq")]
     (is (instance? com.google.bitcoin.core.ECKey kp) "Should create key")
-    (is (= "5KQ3SHTDHfU6XhBp7sSCbUoMpiZQKfKc7jVjAb6rHiegq1m2VWq" (encode-private kp)))))
+    (is (= "5KQ3SHTDHfU6XhBp7sSCbUoMpiZQKfKc7jVjAb6rHiegq1m2VWq" (->private kp)))))
 
 (deftest should-create-address
-  (is (instance? com.google.bitcoin.core.Address (to-address (create-keypair) (prodNet))) "Should create address for keypair and network")
-  (is (instance? com.google.bitcoin.core.Address (to-address (create-keypair))) "Should create address for keypair default prod network")
-  (is (instance? com.google.bitcoin.core.Address (to-address "17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL" (prodNet))) "Should create address from string and network")
-  (is (instance? com.google.bitcoin.core.Address (to-address "17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL")) "Should create address from string"))
+  (is (instance? com.google.bitcoin.core.Address (->address (create-keypair) (prodNet))) "Should create address for keypair and network")
+  (is (instance? com.google.bitcoin.core.Address (->address (create-keypair))) "Should create address for keypair default prod network")
+  (is (instance? com.google.bitcoin.core.Address (->address "17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL" (prodNet))) "Should create address from string and network")
+  (is (instance? com.google.bitcoin.core.Address (->address "17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL")) "Should create address from string"))
 
 (deftest should-create-wallet
   (let [wal (create-wallet)]

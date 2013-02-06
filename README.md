@@ -14,6 +14,12 @@ Add the following to your project.clj
 [bitcljoin "0.1.0-SNAPSHOT"]
 ```
 
+Use library:
+
+```clojure
+(use 'bitcoin.core)
+```
+
 Create a keypair:
 
 ```clojure
@@ -23,13 +29,25 @@ Create a keypair:
 Create an address from a keypair:
 
 ```clojure
-(to-address (create-keypair))
+(->address (create-keypair))
 ```
 
 Create an address from a String:
 
 ```clojure
-(to-address "17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL")
+(->address "17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL")
+```
+
+Load a private key using the BitCoin privkey dumpformat:
+
+```clojure
+(->kp "5KQ3SHTDHfU6XhBp7sSCbUoMpiZQKfKc7jVjAb6rHiegq1m2VWq")
+```
+
+Export a keypair to BitCoin privkey dump format:
+
+```clojure
+(->private kp)
 ```
 
 Create or load a wallet from a file. If creating it creates a keypair by default:
