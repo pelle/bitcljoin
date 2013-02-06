@@ -1,4 +1,4 @@
-(ns bitcljoin.core
+(ns bitcoin.core
   (:use [clojure.java.io :only [as-file]]
         [bux.currencies :only [BTC]])
   (:require [lamina.core :as lamina]))

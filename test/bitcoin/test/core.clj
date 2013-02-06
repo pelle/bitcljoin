@@ -1,5 +1,5 @@
-(ns bitcljoin.test.core
-  (:use [bitcljoin.core])
+(ns bitcoin.test.core
+  (:use [bitcoin.core])
   (:use [clojure.test])
   (:use [clojure.java.io :only [as-file delete-file]]))
 
