@@ -15,6 +15,9 @@
       (def network (prodNet))
       network)))
 
+(def current-bc (atom nil))
+(def current-pg (atom nil))
+
 (defn create-keypair []
   (com.google.bitcoin.core.ECKey. ))
 
@@ -52,6 +55,22 @@
             (.saveToFile w file)
             w)))))
 
+(defn register-wallet
+  "Register the wallet with the blockchain and peergroup"
+  ([wallet] (register-wallet wallet @current-bc @current-pg))
+  ([wallet bc pg]
+     (.addWallet bc wallet)
+     (.addWallet pg wallet)
+     wallet))
+
+(defn kp->wallet
+  "Create and register a wallet for the keypair"
+  ([kp]
+     (-> (create-wallet)
+         (add-keypair kp)
+         (register-wallet))))
+
+
 (defprotocol Addressable
   (->address [k] [k network]))
 
@@ -79,9 +98,6 @@
   ([] (h2-full-block-store "bitcljoin"))
   ([name] (h2-full-block-store (net) name))
   ([network name] (com.google.bitcoin.store.H2FullPrunedBlockStore. network name 300000)))
-
-(def current-bc (atom nil))
-(def current-pg (atom nil))
 
 (defn block-chain
   ([] (block-chain (file-block-store)))
@@ -146,6 +162,17 @@
 (defn tx-inputs [tx]
   (.getInputs tx))
 
+(defn sender
+  "Returns address of first input of transaction"
+  [tx]
+  (.getFromaddress (first (tx-inputs tx))))
+
+(defn balance [w]
+  (.getBalance w))
+
+(defn amount-received [tx w]
+  (.getValueSentToMe tx w))
+
 (defn regular-inputs
   "non coinbase inputs"
   [tx]
@@ -192,6 +219,37 @@
       (notifyNewBestBlock [block] (lamina/enqueue block-channel block))
       (receiveFromBlock [tx block block-type] (lamina/enqueue tx-channel tx))
       ))
+
+(defn on-coins-received
+  "calls f with the transaction prev balance and new balance"
+  [wallet f]
+  (.addEventListener wallet
+                     (proxy
+                         [com.google.bitcoin.core.AbstractWalletEventListener][]
+                       (onCoinsReceived [w tx prev-balance new-balance]
+                         (if (= wallet w)
+                           (f tx prev-balance new-balance))))))
+
+(defn send-coins
+  "Send a value to a single recipient. To should be a big integer"
+  [wallet to amount]
+  (.sendCoins wallet @current-pg (->address to) amount))
+
+
+(defn ping-service
+  "receive coins on address and return them immediately"
+  ([kp]
+     (ping-service (kp->wallet kp) kp))
+  ([wallet kp]
+     (println "starting ping service on address: " (->address kp) )
+     (on-coins-received wallet
+                        (fn [tx prev new]
+                          (prn tx)
+                          (let [from   (sender tx)
+                                amount (amount-received tx wallet)]
+                            (let [t2 (send-coins wallet from amount)]
+                              (print "Sent to: " (->address from))
+                              (prn t2)))))))
 
 (defn listen-to-block-chain []
   (.addListener @current-bc (block-chain-listener)))
