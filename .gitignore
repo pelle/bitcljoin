@@ -18,3 +18,4 @@ target/
 *.wallet1
 
 .lein-repl-history
+*.privkey

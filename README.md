@@ -2,7 +2,7 @@
 
 Start of a Clojure wrapper for BitCoinJ http://www.bitcoinj.org/
 
-This is absolutely a work in progress. Including documentation (and my understanding of bitcoinj).
+This is absolutely a work in progress. Including documentation (and my understanding of bitcoinj). The API is under a lot of flux. Hope to stabilize it somewhat by 0.1.
 
 If you're interested please email me.
 
@@ -60,6 +60,24 @@ Get the keychain of a wallet:
 
 ```clojure
 (keychain (wallet "./mywallet.wallet"))
+```
+
+Create an in memory wallet for a single keypair:
+
+```clojure
+(kp->wallet kp)
+```
+
+Send coins:
+
+```clojure
+(send-coins wallet "16mJ5mGvj3xdmQhspPxFLp8ScYjirDoKxN" 1.0M)
+```
+
+Register when a payment is received:
+
+```clojure
+(on-coins-received wallet (fn [tx prev-balance new-balance] (prn tx)))
 ```
 
 Download block-chain and query it:
