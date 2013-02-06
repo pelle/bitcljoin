@@ -6,7 +6,7 @@
 
 (defn prodNet []  (com.google.bitcoin.core.NetworkParameters/prodNet))
 (defn testNet []  (com.google.bitcoin.core.NetworkParameters/testNet))
-(def network )
+(def network)
 
 (defn net []
   (if (bound? (var network))
@@ -34,18 +34,21 @@
 
 (defn create-wallet
   ([] (create-wallet (net)))
-  ([network] (let [ w (com.google.bitcoin.core.Wallet. network)
-                    kp (create-keypair) ]
-                    (.add (keychain w) kp)
-                    w)))
+  ([network] (com.google.bitcoin.core.Wallet. network)))
 
-(defn wallet [filename]
+(defn add-keypair [wallet kp]
+  (.add (keychain wallet) kp)
+  wallet)
+
+(defn open-wallet [filename]
   (let [file (as-file filename)]
       (try
         (com.google.bitcoin.core.Wallet/loadFromFile file)
         (catch java.io.FileNotFoundException e
           (let
-            [w (create-wallet)]
+              [w (create-wallet)
+               kp (create-keypair) ]
+            (add-keypair w kp)
             (.saveToFile w file)
             w)))))
 
@@ -77,6 +80,8 @@
   ([name] (h2-full-block-store (net) name))
   ([network name] (com.google.bitcoin.store.H2FullPrunedBlockStore. network name 300000)))
 
+(def current-bc (atom nil))
+(def current-pg (atom nil))
 
 (defn block-chain
   ([] (block-chain (file-block-store)))
@@ -87,13 +92,25 @@
   ([block-store] (com.google.bitcoin.core.FullPrunedBlockChain. (net) block-store)))
 
 (defn peer-group
-  ([] (peer-group (net) (block-chain)))
+  ([] (peer-group (net) @current-bc))
   ([chain] (peer-group (net) chain))
   ([network chain]
     (let [ group (com.google.bitcoin.core.PeerGroup. network chain)]
       (.setUserAgent group "BitCljoin" "0.7")
       (.addPeerDiscovery group (com.google.bitcoin.discovery.SeedPeers. (net)))
       group)))
+
+(defn init
+  "setup a block chain and peer-group using default settings. This should work well for e-commerce and general purpose payments"
+  []
+  (reset! current-bc (block-chain))
+  (reset! current-pg (peer-group @current-bc)))
+
+(defn init-full
+  "setup a full block chain and peer-group using default settings. Use this if you're more interested in analyzing the block chain."
+  []
+  (reset! current-bc (full-block-chain))
+  (reset! current-pg (peer-group @current-bc)))
 
 (defn bc->store
   "returns the block store used by a block chain"
@@ -115,6 +132,7 @@
 
 (defn stored-blocks
   "Lazy sequence of stored blocks from the head and back"
+  ([] (stored-blocks (bc->store @current-bc)))
   ([bs] (stored-blocks bs (.getChainHead bs)))
   ([bs sb] (if sb (cons sb (lazy-seq (stored-blocks bs (.getPrev sb bs)))))))
 
@@ -175,22 +193,27 @@
       (receiveFromBlock [tx block block-type] (lamina/enqueue tx-channel tx))
       ))
 
+(defn listen-to-block-chain []
+  (.addListener @current-bc (block-chain-listener)))
+
+(defn download-block-chain
+  "download block chain"
+  ( [] (download-block-chain @current-pg))
+  ( [pg]
+      (future (.downloadBlockChain pg))))
 
 (defn start
   "start downloading regular block chain"
-  ([] (start (peer-group)))
+  ([]
+     (if (nil? @current-pg) (init))
+     (start (peer-group)))
   ([pg]
-    (peer-listener pg)
-    (future (do
-      (.start pg)
-      (.downloadBlockChain pg)))
-    ))
+     (.start pg)))
 
 
 (defn start-full
   "start downloading full block chain"
-  [] (let [bc (full-block-chain)
-           _  (.addListener bc (block-chain-listener))]
-       (start (peer-group bc))
-        bc))
+  []
+  (if (nil? @current-pg) (init-full))
+  (start @current-pg))
 

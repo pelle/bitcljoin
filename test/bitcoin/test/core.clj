@@ -25,19 +25,25 @@
 (deftest should-create-wallet
   (let [wal (create-wallet)]
     (is (instance? com.google.bitcoin.core.Wallet wal))
-    (let [kc (keychain wal)
-          kp (first kc)]
+    (let [kc (keychain wal)]
+      (is (= 0 (count kc))))))
+
+(deftest should-add-keypair
+  (let [kp (create-keypair)
+        wal (add-keypair (create-wallet) kp)]
+    (is (instance? com.google.bitcoin.core.Wallet wal))
+    (let [kc (keychain wal)]
       (is (= 1 (count kc)))
-      (is (instance? com.google.bitcoin.core.ECKey kp)))))
+      (is (= kp (first kc))))))
   
 
 (deftest should-create-and-load-wallet
   (let [ filename "./test.wallet"
          _ (delete-file (as-file filename) true)
-         wal (wallet filename)]
+         wal (open-wallet filename)]
     (is (instance? com.google.bitcoin.core.Wallet wal))
     (let [kc (keychain wal)
           kp (first kc)]
       (is (= 1 (count kc)))
       (is (instance? com.google.bitcoin.core.ECKey kp)
-      (is (= (str kp) (str (first (keychain (wallet filename))))))))))
+      (is (= (str kp) (str (first (keychain (open-wallet filename))))))))))

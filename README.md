@@ -53,7 +53,7 @@ Export a keypair to BitCoin privkey dump format:
 Create or load a wallet from a file. If creating it creates a keypair by default:
 
 ```clojure
-(wallet "./mywallet.wallet")
+(open-wallet "./mywallet.wallet")
 ```
 
 Get the keychain of a wallet:
@@ -65,13 +65,11 @@ Get the keychain of a wallet:
 Download block-chain and query it:
 
 ```clojure
-(def bs (file-block-store))
-(def bc (block-chain bs))
-(def pg (peer-group bc))
-(start pg) ;; start downloading
+(start)
+(download-block-chain)
 
 ;; a sequence of blocks starting with the current head and going backwards
-(take 10 (stored-blocks bs))
+(take 10 (stored-blocks))
 ```
 
 ## Full or regular block chain
@@ -83,7 +81,7 @@ If you're interested in bitcoin as a whole say for analytics. BitcoinJ now suppo
 You can start this using start full which also returns the block chain.
 
 ```clojure
-(def bc (start-full))
+(start-full)
 ```
 
 ## Lamina Channels
