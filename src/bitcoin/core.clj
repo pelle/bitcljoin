@@ -231,9 +231,9 @@
                            (f tx prev-balance new-balance))))))
 
 (defn send-coins
-  "Send a value to a single recipient. To should be a big integer"
+  "Send a value to a single recipient."
   [wallet to amount]
-  (.sendCoins wallet @current-pg (->address to) amount))
+  (.sendCoins wallet @current-pg (->address to) (biginteger amount)))
 
 
 (defn ping-service

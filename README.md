@@ -71,7 +71,7 @@ Create an in memory wallet for a single keypair:
 Send coins:
 
 ```clojure
-(send-coins wallet "16mJ5mGvj3xdmQhspPxFLp8ScYjirDoKxN" 1.0M)
+(send-coins wallet "16mJ5mGvj3xdmQhspPxFLp8ScYjirDoKxN" 1000) ;; Use nano coins TODO use BigDec
 ```
 
 Register when a payment is received:
