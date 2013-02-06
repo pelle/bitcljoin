@@ -8,7 +8,13 @@
   (is (= (.getId (net)) "org.bitcoin.production") "Should default to prodNet"))
 
 (deftest should-create-key 
-  (is (instance? com.google.bitcoin.core.ECKey (create-keypair)) "Should create key"))
+  (let [kp (create-keypair)]
+    (is (instance? com.google.bitcoin.core.ECKey kp) "Should create key")))
+
+(deftest should-decode-key
+  (let [kp (decode-private "5KQ3SHTDHfU6XhBp7sSCbUoMpiZQKfKc7jVjAb6rHiegq1m2VWq")]
+    (is (instance? com.google.bitcoin.core.ECKey kp) "Should create key")
+    (is (= "5KQ3SHTDHfU6XhBp7sSCbUoMpiZQKfKc7jVjAb6rHiegq1m2VWq" (encode-private kp)))))
 
 (deftest should-create-address
   (is (instance? com.google.bitcoin.core.Address (to-address (create-keypair) (prodNet))) "Should create address for keypair and network")

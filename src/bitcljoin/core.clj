@@ -16,8 +16,13 @@
       network)))
 
 (defn create-keypair []
-  (new com.google.bitcoin.core.ECKey))
+  (com.google.bitcoin.core.ECKey. ))
 
+(defn encode-private [kp]
+  (str (.getPrivateKeyEncoded kp network)))
+
+(defn decode-private [s]
+  (.getKey (com.google.bitcoin.core.DumpedPrivateKey. network s)))
 
 (defn keychain [w]
   (.keychain w))
@@ -25,7 +30,7 @@
 
 (defn create-wallet
   ([] (create-wallet (net)))
-  ([network] (let [ w (new com.google.bitcoin.core.Wallet network)
+  ([network] (let [ w (com.google.bitcoin.core.Wallet. network)
                     kp (create-keypair) ]
                     (.add (keychain w) kp)
                     w)))
@@ -52,6 +57,7 @@
   (to-address
     ([keypair] (to-address keypair (net)))
     ([keypair network] (new com.google.bitcoin.core.Address network keypair))))
+
 
 (defn memory-block-store
   ([] (memory-block-store (net)))
@@ -164,6 +170,7 @@
       (notifyNewBestBlock [block] (lamina/enqueue block-channel block))
       (receiveFromBlock [tx block block-type] (lamina/enqueue tx-channel tx))
       ))
+
 
 (defn start
   "start downloading regular block chain"
