@@ -1,5 +1,6 @@
 (ns bitcoin.core
   (:use [clojure.java.io :only [as-file]]
+        [clojure.set :only [intersection]]
         [bux.currencies :only [BTC]])
   (:require [lamina.core :as lamina]))
 
@@ -79,11 +80,14 @@
     ([keypair] (->address keypair (net)))
     ([keypair network] (.toAddress keypair network))))
 
+(extend-type com.google.bitcoin.core.Address Addressable
+  (->address
+    ([address] address)))
+
 (extend-type String Addressable
   (->address
     ([keypair] (->address keypair (net)))
     ([keypair network] (new com.google.bitcoin.core.Address network keypair))))
-
 
 (defn memory-block-store
   ([] (memory-block-store (net)))
@@ -186,15 +190,25 @@
 (defn tx-outputs [tx]
   (.getOutputs tx))
 
-(defn output-from-addresses
+(defn from-addresses
   "Get the from addresses for a transaction"
   [tx]
   (map #(.getFromAddress %) (regular-inputs tx)))
 
-(defn output-to-addresses
+(defn to-addresses
   "Get the from addresses for a transaction"
   [tx]
-  (map #(.getToAddress %) (regular-inputs tx)))
+  (set (map #(.getToAddress (.getScriptPubKey %)) (tx-outputs tx))))
+
+(defn my-addresses
+  "Return all the addresses in the given wallet"
+  [wallet]
+  (map ->address (keychain wallet)))
+
+(defn for-me?
+  "Does this transaction belong to our wallet?"
+  [tx wallet]
+  (not (empty? (intersection (set (my-addresses wallet)) (to-addresses tx)))))
 
 
 (def tx-channel
@@ -207,10 +221,20 @@
   (lamina/filter* coin-base? tx-channel))
 
 
-(defn peer-listener
+(defn download-listener
   [pg]
   (.addEventListener pg
     (com.google.bitcoin.core.DownloadListener.)))
+
+(defn on-tx-broadcast
+  "Listen to all transactions broadcast out to the network"
+  ([f]
+     (on-tx-broadcast @current-pg f))
+  ([pg f]
+     (.addEventListener pg
+                        (proxy
+                         [com.google.bitcoin.core.AbstractPeerEventListener][]
+                       (onTransaction [peer tx ] (f peer tx))))))
 
 (defn block-chain-listener []
   (proxy
@@ -230,6 +254,25 @@
                          (if (= wallet w)
                            (f tx prev-balance new-balance))))))
 
+(defn on-tx-broadcast-to-wallet
+  "calls f with the peer and transaction if transaction is received to the given wallet.
+   This is called before the transaction is included in a block. Use it for SatoshiDice like applications"
+  [wallet f]
+  (on-tx-broadcast (fn [peer tx]
+                     (prn peer)
+                     (prn tx)
+                     (if (for-me? tx wallet)
+                       (f peer tx)))))
+
+(defn on-tx-broadcast-to-address
+  "calls f with the peer and transaction if transaction is received to the given wallet.
+   This is called before the transaction is included in a block. Use it for SatoshiDice like applications"
+  [address f]
+  (let [address (-> address)]
+    (on-tx-broadcast (fn [peer tx]
+                       (if ((to-addresses tx) address)
+                         (f peer tx))))))
+
 (defn send-coins
   "Send a value to a single recipient."
   [wallet to amount]
@@ -242,14 +285,21 @@
      (ping-service (kp->wallet kp) kp))
   ([wallet kp]
      (println "starting ping service on address: " (->address kp) )
-     (on-coins-received wallet
-                        (fn [tx prev new]
-                          (prn tx)
-                          (let [from   (sender tx)
-                                amount (amount-received tx wallet)]
-                            (let [t2 (send-coins wallet from amount)]
-                              (print "Sent to: " (->address from))
-                              (prn t2)))))))
+     (on-tx-broadcast-to-wallet wallet
+                                (fn [peer tx]                                  
+                                  (let [from   (sender tx)
+                                        amount (amount-received tx wallet)]
+                                    (let [t2 (send-coins wallet from amount)]
+                                      (print "Sent to: " (->address from))
+                                      (prn t2)))))))
+
+(defn address-tx-channel
+  "Creates a channel for transactions broadcast to a specific address"
+  [address]
+  (let [channel (lamina/channel)]
+    (on-tx-broadcast-to-address address (fn [peer tx]
+                                          (lamina/enqueue channel tx)))
+    channel))
 
 (defn listen-to-block-chain []
   (.addListener @current-bc (block-chain-listener)))
