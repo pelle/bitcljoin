@@ -116,7 +116,7 @@
   ([chain] (peer-group (net) chain))
   ([network chain]
     (let [ group (com.google.bitcoin.core.PeerGroup. network chain)]
-      (.setUserAgent group "BitCljoin" "0.7")
+      (.setUserAgent group "BitCljoin" "0.1.0")
       (.addPeerDiscovery group (com.google.bitcoin.discovery.SeedPeers. (net)))
       group)))
 
