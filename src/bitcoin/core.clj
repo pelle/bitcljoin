@@ -80,6 +80,11 @@
     ([keypair] (->address keypair (net)))
     ([keypair network] (.toAddress keypair network))))
 
+(extend-type (class (byte-array nil)) Addressable
+  (->address
+    ([pub] (->address pub (net)))
+    ([pub network] (new com.google.bitcoin.core.Address network (com.google.bitcoin.core.Utils/sha256hash160 pub)))))
+
 (extend-type com.google.bitcoin.core.Address Addressable
   (->address
     ([address] address)))

@@ -19,6 +19,7 @@
 (deftest should-create-address
   (is (instance? com.google.bitcoin.core.Address (->address (create-keypair) (prodNet))) "Should create address for keypair and network")
   (is (instance? com.google.bitcoin.core.Address (->address (create-keypair))) "Should create address for keypair default prod network")
+  (is (instance? com.google.bitcoin.core.Address (->address (.getPubKey (create-keypair)))) "Should create address for public key default prod network")
   (is (instance? com.google.bitcoin.core.Address (->address "17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL" (prodNet))) "Should create address from string and network")
   (is (instance? com.google.bitcoin.core.Address (->address "17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL")) "Should create address from string")
   (is (= (->address "17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL")
