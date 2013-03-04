@@ -6,6 +6,19 @@ This is absolutely a work in progress. Including documentation (and my understan
 
 If you're interested please email me.
 
+## Installing bitcoinj
+
+You first need a copy of bitcoinj in your local maven repository. Unfortunately google doesn't offer it on a public maven service.
+
+So until then you need to clone their repo and install it locally using these instructions from their [Using Maven](http://code.google.com/p/bitcoinj/wiki/UsingMaven) page:
+
+```bash
+git clone https://code.google.com/p/bitcoinj/ bitcoinj
+cd bitcoinj
+git reset --hard a9bd8631b904     # Force yourself to the 0.7 release
+mvn install
+```
+
 ## Usage
 
 Add the following to your project.clj
