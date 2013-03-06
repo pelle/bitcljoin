@@ -71,6 +71,10 @@
          (add-keypair kp)
          (register-wallet))))
 
+(defn ->BTC
+  "Convert nanocoins to BTC"
+  [nano]
+  (BTC (/ nano 100000000)))
 
 (defprotocol Addressable
   (->address [k] [k network]))
@@ -176,8 +180,10 @@
   [tx]
   (.getFromaddress (first (tx-inputs tx))))
 
-(defn balance [w]
-  (.getBalance w))
+(defn balance
+  "returns the balance of the wallet"
+  [wallet]
+  (.getBalance wallet))
 
 (defn amount-received [tx w]
   (.getValueSentToMe tx w))

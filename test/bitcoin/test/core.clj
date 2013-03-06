@@ -1,7 +1,8 @@
 (ns bitcoin.test.core
-  (:use [bitcoin.core])
-  (:use [clojure.test])
-  (:use [clojure.java.io :only [as-file delete-file]]))
+  (:use [bitcoin.core]
+        [bux.currencies :only [BTC]]
+        [clojure.test]
+        [clojure.java.io :only [as-file delete-file]]))
 
 
 (deftest should-have-default-net
@@ -50,3 +51,8 @@
       (is (= 1 (count kc)))
       (is (instance? com.google.bitcoin.core.ECKey kp)
       (is (= (str kp) (str (first (keychain (open-wallet filename))))))))))
+
+
+(deftest should-convert-nano-to-btc
+  (is (= (BTC 0) (->BTC 0)))
+  (is (= (BTC 1.23) (->BTC 123000000))))
