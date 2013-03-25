@@ -15,7 +15,7 @@ So until then you need to clone their repo and install it locally using these in
 ```bash
 git clone https://code.google.com/p/bitcoinj/ bitcoinj
 cd bitcoinj
-git reset --hard a9bd8631b904     # Force yourself to the 0.7 release
+git reset --hard 3c3f34c461ac654abb2f3f881312e5826ca64dbc     # Force yourself to the 0.7.3 release
 mvn install
 ```
 
@@ -24,7 +24,7 @@ mvn install
 Add the following to your project.clj
 
 ```clojure
-[bitcljoin "0.1.0-SNAPSHOT"]
+[bitcljoin "0.1.0"]
 ```
 
 Use library:
