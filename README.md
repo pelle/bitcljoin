@@ -2,7 +2,7 @@
 
 Start of a Clojure wrapper for BitCoinJ http://www.bitcoinj.org/
 
-This is absolutely a work in progress. Including documentation (and my understanding of bitcoinj). The API is under a lot of flux. Hope to stabilize it somewhat by 0.1.
+This is absolutely a work in progress. Including documentation (and my understanding of bitcoinj). The API is under a lot of flux. Hope to stabilize it somewhat by 1.0.
 
 If you're interested please email me.
 
@@ -15,7 +15,7 @@ So until then you need to clone their repo and install it locally using these in
 ```bash
 git clone https://code.google.com/p/bitcoinj/ bitcoinj
 cd bitcoinj
-git reset --hard 3c3f34c461ac654abb2f3f881312e5826ca64dbc     # Force yourself to the 0.7.3 release
+git reset --hard cbbb1a2bf4d189732efe273ebf65ab2da14eaaa5   # Force yourself to the 0.8 release
 mvn install
 ```
 
@@ -24,7 +24,7 @@ mvn install
 Add the following to your project.clj
 
 ```clojure
-[bitcljoin "0.1.0"]
+[bitcljoin "0.2.0"]
 ```
 
 Use library:
