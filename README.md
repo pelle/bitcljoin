@@ -15,7 +15,7 @@ So until then you need to clone their repo and install it locally using these in
 ```bash
 git clone https://code.google.com/p/bitcoinj/ bitcoinj
 cd bitcoinj
-git reset --hard cbbb1a2bf4d189732efe273ebf65ab2da14eaaa5   # Force yourself to the 0.8 release
+git checkout release-0.8
 mvn install
 ```
 
