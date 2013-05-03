@@ -178,7 +178,7 @@
 (defn sender
   "Returns address of first input of transaction"
   [tx]
-  (.getFromaddress (first (tx-inputs tx))))
+  (.getFromAddress (first (tx-inputs tx))))
 
 (defn balance
   "returns the balance of the wallet"
