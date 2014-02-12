@@ -33,7 +33,7 @@
   (.getKey (com.google.bitcoin.core.DumpedPrivateKey. network s)))
 
 (defn keychain [w]
-  (.keychain w))
+  (.getKeys w))
 
 
 (defn create-wallet
@@ -41,14 +41,14 @@
   ([network] (com.google.bitcoin.core.Wallet. network)))
 
 (defn add-keypair [wallet kp]
-  (.add (keychain wallet) kp)
+  (.addKey wallet kp)
   wallet)
 
 (defn open-wallet [filename]
   (let [file (as-file filename)]
       (try
         (com.google.bitcoin.core.Wallet/loadFromFile file)
-        (catch java.io.FileNotFoundException e
+        (catch com.google.bitcoin.store.UnreadableWalletException e
           (let
               [w (create-wallet)
                kp (create-keypair) ]
@@ -105,7 +105,7 @@
 (defn file-block-store
   ([] (file-block-store "bitcljoin"))
   ([name] (file-block-store (net) name))
-  ([network name] (com.google.bitcoin.store.BoundedOverheadBlockStore. network (java.io.File. (str name ".blockchain")))))
+  ([network name] (com.google.bitcoin.store.SPVBlockStore. network (java.io.File. (str name ".spv-blockchain")))))
 
 (defn h2-full-block-store
   ([] (h2-full-block-store "bitcljoin"))
@@ -126,7 +126,7 @@
   ([network chain]
     (let [ group (com.google.bitcoin.core.PeerGroup. network chain)]
       (.setUserAgent group "BitCljoin" "0.1.0")
-      (.addPeerDiscovery group (com.google.bitcoin.discovery.SeedPeers. (net)))
+      (.addPeerDiscovery group (com.google.bitcoin.net.discovery.SeedPeers. (net)))
       group)))
 
 (defn init
@@ -297,7 +297,7 @@
   ([wallet kp]
      (println "starting ping service on address: " (->address kp) )
      (on-tx-broadcast-to-wallet wallet
-                                (fn [peer tx]                                  
+                                (fn [peer tx]
                                   (let [from   (sender tx)
                                         amount (amount-received tx wallet)]
                                     (let [t2 (send-coins wallet from amount)]

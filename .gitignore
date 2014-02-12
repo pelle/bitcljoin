@@ -20,3 +20,5 @@ target/
 .lein-repl-history
 *.privkey
 *.wallet
+
+.nrepl-port
