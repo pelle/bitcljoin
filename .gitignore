@@ -22,3 +22,5 @@ target/
 *.wallet
 
 .nrepl-port
+
+*.spv-blockchain
