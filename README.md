@@ -115,23 +115,33 @@ You can start this using start full which also returns the block chain.
 (start-full)
 ```
 
-## Lamina Channels
+## Channels
 
-[Lamina](https://github.com/ztellman/lamina is a great new library for managing asyncronous communications. One of the key abstractions
+[Lamina](https://github.com/ztellman/lamina) is a great new library for managing asyncronous communications. One of the key abstractions
 is the [Channel](https://github.com/ztellman/lamina/wiki/Channels-new) which can be thought of as a pub/sub system that looks a bit like a sequence.
 
 This is all experimental but I think this is a much better way of doing analytics on the BitCoin economy.
 
-We now create a lamina channel for both blocks and transactions if you start the full block chain downloader:
+If you were using this pre 0.3 please note that this has changed a bit. In particular we have a new namespace <tt>bitcoin.channels</tt>. Channels are also not created automatically.
+
 
 ```clojure
-(start-full) ; Starts the full block chain downloader which gives a more complete view of the bitcoin economy
+(require '[bitcoin.core :as btc])
+(require '[bitcoin.channels :as c])
+(require '[lamina.core :as l])
 
-(lamina.core/take* 1 tx-channel) ;; get the first transaction off the channel
-(lamina.core/take* 1 block-channel) ;; get the first block off the channel
+(btc/start-full) ; Starts the full block chain downloader which gives a more complete view of the bitcoin economy
+
+(def txs (c/broadcast-txs)) ;; A channel of all new transactions
+(def dice (c/txs-for "1dice8EMZmqKvrGE4Qc9bUFf9PX3xaYDp"))
+(def blocks (c/blocks))
+
+
+(lamina.core/take* 1 txs) ;; get the first transaction off the channel
+(lamina.core/take* 1 blocks) ;; get the first block off the channel
 
 ; Lamina allows us to create a new channel using map* which works exactly like clojure's regular map except on channels
-(def block-time (lamina.core/map* #(.getTime %) block-channel)) ; Create a new channel containing all the timestamps of the blocks
+(def block-time (lamina.core/map* #(.getTime %) blocks)) ; Create a new channel containing all the timestamps of the blocks
 ```
 
 

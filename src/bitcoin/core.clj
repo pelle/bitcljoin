@@ -1,8 +1,7 @@
 (ns bitcoin.core
   (:use [clojure.java.io :only [as-file]]
         [clojure.set :only [intersection]]
-        [bux.currencies :only [BTC]])
-  (:require [lamina.core :as lamina]))
+        [bux.currencies :only [BTC]]))
 
 
 (defn prodNet []  (com.google.bitcoin.core.NetworkParameters/prodNet))
@@ -221,17 +220,6 @@
   [tx wallet]
   (not (empty? (intersection (set (my-addresses wallet)) (to-addresses tx)))))
 
-
-(def tx-channel
-  (lamina/channel))
-
-(def block-channel
-  (lamina/channel))
-
-(def coin-base-channel
-  (lamina/filter* coin-base? tx-channel))
-
-
 (defn download-listener
   [pg]
   (.addEventListener pg
@@ -246,14 +234,6 @@
                         (proxy
                          [com.google.bitcoin.core.AbstractPeerEventListener][]
                        (onTransaction [peer tx ] (f peer tx))))))
-
-(defn block-chain-listener []
-  (proxy
-      [com.google.bitcoin.core.BlockChainListener][]
-      (isTransactionRelevant [tx] true)
-      (notifyNewBestBlock [block] (lamina/enqueue block-channel block))
-      (receiveFromBlock [tx block block-type] (lamina/enqueue tx-channel tx))
-      ))
 
 (defn on-coins-received
   "calls f with the transaction prev balance and new balance"
@@ -303,17 +283,6 @@
                                     (let [t2 (send-coins wallet from amount)]
                                       (print "Sent to: " (->address from))
                                       (prn t2)))))))
-
-(defn address-tx-channel
-  "Creates a channel for transactions broadcast to a specific address"
-  [address]
-  (let [channel (lamina/channel)]
-    (on-tx-broadcast-to-address address (fn [peer tx]
-                                          (lamina/enqueue channel tx)))
-    channel))
-
-(defn listen-to-block-chain []
-  (.addListener @current-bc (block-chain-listener)))
 
 (defn download-block-chain
   "download block chain"

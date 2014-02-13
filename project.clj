@@ -7,5 +7,5 @@
     [lamina "0.5.0"]
     [bux "0.2.1"]]
   ;; :jvm-opts ["-Xmx1g"]
-  ;; :profiles { :dev {:dependencies [[ch.qos.logback/logback-classic "1.0.7"]]}}
+  ;;:profiles { :dev {:dependencies [[ch.qos.logback/logback-classic "1.0.7"]]}}
   )
