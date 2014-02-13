@@ -29,7 +29,7 @@
      (.addListener bc (proxy
                         [com.google.bitcoin.core.BlockChainListener][]
                         (isTransactionRelevant [tx] true)
-                        (receiveFromBlock [tx _ _] (lamina/enqueue ch tx))
+                        (receiveFromBlock [tx _ _ _] (lamina/enqueue ch tx))
                         (notifyNewBestBlock [block] nil)))
      ch))
   ([] (confirmed-txs @btc/current-bc)))
@@ -41,7 +41,7 @@
      (.addListener bc (proxy
                         [com.google.bitcoin.core.BlockChainListener][]
                         (isTransactionRelevant [tx] true)
-                        (receiveFromBlock [tx _ _] nil)
+                        (receiveFromBlock [tx _ _ _] nil)
                         (notifyNewBestBlock [block] (lamina/enqueue ch block))))
      ch))
   ([] (blocks @btc/current-bc)))
