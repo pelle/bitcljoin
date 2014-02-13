@@ -117,7 +117,7 @@ You can start this using start full which also returns the block chain.
 
 ## Lamina Channels
 
-[Lamina](https://github.com/ztellman/lamina is a great new library for managing asyncronous communications. One of the key abstractions
+[Lamina](https://github.com/ztellman/lamina) is a great new library for managing asyncronous communications. One of the key abstractions
 is the [Channel](https://github.com/ztellman/lamina/wiki/Channels-new) which can be thought of as a pub/sub system that looks a bit like a sequence.
 
 This is all experimental but I think this is a much better way of doing analytics on the BitCoin economy.
