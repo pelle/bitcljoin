@@ -220,6 +220,65 @@
   [tx wallet]
   (not (empty? (intersection (set (my-addresses wallet)) (to-addresses tx)))))
 
+(defn block->map
+  "Turns a stored block into a subset of the JSON as used in Bitcoind's JSON-RPC inteface"
+  [sb]
+  (let [block (.getHeader sb)]
+    { :hash (.getHashAsString block)
+      :merkleroot (str (.getMerkleRoot block))
+      :nonce (.getNonce block),
+      :difficulty (.getDifficultyTargetAsInteger block)
+      :tx (map #(.getHashAsString %) (.getTransactions block))
+      :previousblockhash (str (.getPrevBlockHash block))
+      :time (.getTimeSeconds block)
+      :height (.getHeight sb)}))
+
+(defn sig->address [sig]
+  "Returns the address sgtring for an outputs script pubkey"
+  (try
+    (if sig
+      (str (.getToAddress sig (net))))
+    (catch com.google.bitcoin.core.ScriptException e nil)))
+
+(defn output->address [o]
+  "Returns the address string for an outputs script pubkey"
+  (sig->address (.getScriptPubKey o)))
+
+(defn output->map
+  [o i]
+  { :index i
+    :value (long (.getValue o))
+;    :script (.getScriptBytes o)
+    :address (output->address o)})
+
+(defn input->map
+  [i]
+  (let [op (.getOutpoint i)]
+    (if-let [o (.getConnectedOutput op)]
+      (assoc (output->map o (.getIndex op))
+        :tx (str (.getHash op)))
+      {:tx (str (.getHash op))
+       :index (.getIndex op)
+       :address (str (.getFromAddress i))})))
+
+(defn tx->map
+  "Turns a Transaction into a map"
+  ([tx]
+   (println "inputs " (prn-str (.getInputs tx)))
+   {:time (/ (.getTime (.getUpdateTime tx)) 1000)
+    :outputs
+      (map output->map
+           (.getOutputs tx)
+           (range (count (.getOutputs tx))))
+    :inputs (map input->map (.getInputs tx))
+    :confirmations (.getDepthInBlocks (.getConfidence tx))
+    :txid (str (.getHash tx))})
+  ([sb tx]
+   (let [block (.getHeader sb)]
+     (merge (tx->map tx)
+            {:blockhash (.getHashAsString block)
+             :blocktime (.getTimeSeconds block)}))))
+
 (defn download-listener
   [pg]
   (.addEventListener pg

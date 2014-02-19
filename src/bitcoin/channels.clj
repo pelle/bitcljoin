@@ -2,6 +2,14 @@
   (:require [lamina.core :as lamina]
             [bitcoin.core :as btc]))
 
+(defn txs->maps
+  [ch]
+  (lamina/filter* btc/tx->map ch))
+
+(defn blocks->maps
+  [ch]
+  (lamina/filter* btc/block->map ch))
+
 (defn broadcast-txs
   "Returns a of new transactions being broadcast (not yet in the blockchain)"
   ([pg]
@@ -45,4 +53,12 @@
                         (notifyNewBestBlock [block] (lamina/enqueue ch block))))
      ch))
   ([] (blocks @btc/current-bc)))
+
+(defn txs->maps
+  [ch]
+  (lamina/map* btc/tx->map ch))
+
+(defn blocks->maps
+  [ch]
+  (lamina/map* btc/block->map ch))
 
