@@ -309,8 +309,6 @@
    This is called before the transaction is included in a block. Use it for SatoshiDice like applications"
   [wallet f]
   (on-tx-broadcast (fn [peer tx]
-                     (prn peer)
-                     (prn tx)
                      (if (for-me? tx wallet)
                        (f peer tx)))))
 
