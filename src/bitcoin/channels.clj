@@ -30,6 +30,19 @@
   ([address]
    (txs-for (broadcast-txs) address)))
 
+(defn wallet-txs
+  "Creates a channel for transactions sent to a specific address
+
+  In it's single parameter form it sets up a broadcast-tx-channel of unconfirmed transactions.
+
+  for confirmed transactions pass the channel in as the first argument"
+
+  ([channel wallet]
+    (lamina/filter* #(btc/for-me? % wallet) channel))
+  ([wallet]
+   (wallet-txs (broadcast-txs) wallet)))
+
+
 (defn confirmed-txs
   "Returns a of new transactions entering the blockchain"
   ([bc]
