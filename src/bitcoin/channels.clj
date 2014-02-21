@@ -75,3 +75,12 @@
   [ch]
   (lamina/map* btc/block->map ch))
 
+(defn log-errors
+  "Log all errors"
+  [ch]
+  (lamina/on-error ch #(clojure.stacktrace/print-cause-trace %)))
+
+(defn prn-all
+  "prn content of channel"
+  [ch]
+  (lamina/receive-all ch prn))
