@@ -1,8 +1,7 @@
 (ns bitcoin.core
   (:use [clojure.java.io :only [as-file]]
         [clojure.set :only [intersection]]
-        [bux.currencies :only [BTC]])
-  (:require [lamina.core :as lamina]))
+        [bux.currencies :only [BTC]]))
 
 
 (defn prodNet []  (com.google.bitcoin.core.NetworkParameters/prodNet))
@@ -33,7 +32,7 @@
   (.getKey (com.google.bitcoin.core.DumpedPrivateKey. network s)))
 
 (defn keychain [w]
-  (.keychain w))
+  (.getKeys w))
 
 
 (defn create-wallet
@@ -41,14 +40,14 @@
   ([network] (com.google.bitcoin.core.Wallet. network)))
 
 (defn add-keypair [wallet kp]
-  (.add (keychain wallet) kp)
+  (.addKey wallet kp)
   wallet)
 
 (defn open-wallet [filename]
   (let [file (as-file filename)]
       (try
         (com.google.bitcoin.core.Wallet/loadFromFile file)
-        (catch java.io.FileNotFoundException e
+        (catch com.google.bitcoin.store.UnreadableWalletException e
           (let
               [w (create-wallet)
                kp (create-keypair) ]
@@ -105,7 +104,7 @@
 (defn file-block-store
   ([] (file-block-store "bitcljoin"))
   ([name] (file-block-store (net) name))
-  ([network name] (com.google.bitcoin.store.BoundedOverheadBlockStore. network (java.io.File. (str name ".blockchain")))))
+  ([network name] (com.google.bitcoin.store.SPVBlockStore. network (java.io.File. (str name ".spv-blockchain")))))
 
 (defn h2-full-block-store
   ([] (h2-full-block-store "bitcljoin"))
@@ -126,7 +125,7 @@
   ([network chain]
     (let [ group (com.google.bitcoin.core.PeerGroup. network chain)]
       (.setUserAgent group "BitCljoin" "0.1.0")
-      (.addPeerDiscovery group (com.google.bitcoin.discovery.SeedPeers. (net)))
+      (.addPeerDiscovery group (com.google.bitcoin.net.discovery.SeedPeers. (net)))
       group)))
 
 (defn init
@@ -221,16 +220,105 @@
   [tx wallet]
   (not (empty? (intersection (set (my-addresses wallet)) (to-addresses tx)))))
 
+(defn block->map
+  "Turns a stored block into a subset of the JSON as used in Bitcoind's JSON-RPC inteface"
+  [sb]
+  (let [block (.getHeader sb)]
+    { :hash (.getHashAsString block)
+      :merkleroot (str (.getMerkleRoot block))
+      :nonce (.getNonce block),
+      :difficulty (.getDifficultyTargetAsInteger block)
+      :tx (map #(.getHashAsString %) (.getTransactions block))
+      :previousblockhash (str (.getPrevBlockHash block))
+      :time (.getTimeSeconds block)
+      :height (.getHeight sb)}))
 
-(def tx-channel
-  (lamina/channel))
+(defn sig->address [sig]
+  "Returns the address sgtring for an outputs script pubkey"
+  (try
+    (if sig
+      (str (.getToAddress sig (net))))
+    (catch com.google.bitcoin.core.ScriptException e nil)))
 
-(def block-channel
-  (lamina/channel))
+(defn output->address [o]
+  "Returns the address string for an outputs script pubkey"
+  (sig->address (.getScriptPubKey o)))
 
-(def coin-base-channel
-  (lamina/filter* coin-base? tx-channel))
+(defn output->map
+  [o i]
+  { :index i
+    :value (long (.getValue o))
+;    :script (.getScriptBytes o)
+    :address (output->address o)})
 
+(defn input->output
+  "attempts to find a connected output for a given input"
+  [i]
+  (if-let [op (.getOutpoint i)]
+    (.getConnectedOutput op)))
+
+(defn input->value
+  "attempts to find the value of a given input"
+  [i]
+  (if-let [o (input->output i)]
+    (.getValue o)
+    0))
+
+(defn input->map
+  [i]
+  (let [op (.getOutpoint i)]
+    (if-let [o (.getConnectedOutput op)]
+      (assoc (output->map o (.getIndex op))
+        :tx (str (.getHash op)))
+      {:tx (str (.getHash op))
+       :index (.getIndex op)
+       :address (str (.getFromAddress i))})))
+
+(defn tx-fees
+  "Don't trust this just yet"
+  [tx]
+  (- (reduce + (map #(input->value %) (.getInputs tx)))
+     (reduce + (map #(.getValue %) (.getOutputs tx)))))
+
+(defn tx->map
+  "Turns a Transaction into a map"
+  ([tx]
+   {:time (/ (.getTime (.getUpdateTime tx)) 1000)
+    :outputs
+      (map output->map
+           (.getOutputs tx)
+           (range (count (.getOutputs tx))))
+    :inputs (map input->map (.getInputs tx))
+    :confirmations (.getDepthInBlocks (.getConfidence tx))
+    ;:fees (tx-fees tx)
+    :txid (str (.getHash tx))})
+  ([sb tx]
+   (let [block (.getHeader sb)]
+     (merge (tx->map tx)
+            {:blockhash (.getHashAsString block)
+             :blocktime (.getTimeSeconds block)}))))
+
+(defn wallet-tx->map
+  "Turns a Wallets Transaction into a map"
+  ([wallet tx]
+   {:time (/ (.getTime (.getUpdateTime tx)) 1000)
+    :amount (.getValue tx wallet)
+    :details  (reduce #(assoc %
+                         (key %2)
+                         (reduce + (map :value (val %2)))) {}
+                (group-by :address
+                       (clojure.set/union
+                        (map #(assoc % :value (- (:value %)))
+                             (map output->map (filter #(not (.isMine % wallet)) (.getOutputs tx))))
+                        (map input->map (filter #(not (.isMine (.getConnectedOutput (.getOutpoint %)) wallet)) (.getInputs tx))))))
+    :confirmations (.getDepthInBlocks (.getConfidence tx))
+    ;:fees (tx-fees tx)
+    :txid (str (.getHash tx))})
+  ([wallet sb tx]
+   (let [block (.getHeader sb)]
+     (merge (wallet-tx->map wallet tx)
+            {:blockhash (.getHashAsString block)
+             :blocktime (.getTimeSeconds block)}))))
 
 (defn download-listener
   [pg]
@@ -247,14 +335,6 @@
                          [com.google.bitcoin.core.AbstractPeerEventListener][]
                        (onTransaction [peer tx ] (f peer tx))))))
 
-(defn block-chain-listener []
-  (proxy
-      [com.google.bitcoin.core.BlockChainListener][]
-      (isTransactionRelevant [tx] true)
-      (notifyNewBestBlock [block] (lamina/enqueue block-channel block))
-      (receiveFromBlock [tx block block-type] (lamina/enqueue tx-channel tx))
-      ))
-
 (defn on-coins-received
   "calls f with the transaction prev balance and new balance"
   [wallet f]
@@ -270,8 +350,6 @@
    This is called before the transaction is included in a block. Use it for SatoshiDice like applications"
   [wallet f]
   (on-tx-broadcast (fn [peer tx]
-                     (prn peer)
-                     (prn tx)
                      (if (for-me? tx wallet)
                        (f peer tx)))))
 
@@ -297,23 +375,12 @@
   ([wallet kp]
      (println "starting ping service on address: " (->address kp) )
      (on-tx-broadcast-to-wallet wallet
-                                (fn [peer tx]                                  
+                                (fn [peer tx]
                                   (let [from   (sender tx)
                                         amount (amount-received tx wallet)]
                                     (let [t2 (send-coins wallet from amount)]
                                       (print "Sent to: " (->address from))
                                       (prn t2)))))))
-
-(defn address-tx-channel
-  "Creates a channel for transactions broadcast to a specific address"
-  [address]
-  (let [channel (lamina/channel)]
-    (on-tx-broadcast-to-address address (fn [peer tx]
-                                          (lamina/enqueue channel tx)))
-    channel))
-
-(defn listen-to-block-chain []
-  (.addListener @current-bc (block-chain-listener)))
 
 (defn download-block-chain
   "download block chain"

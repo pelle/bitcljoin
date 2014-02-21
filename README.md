@@ -15,7 +15,7 @@ So until then you need to clone their repo and install it locally using these in
 ```bash
 git clone https://code.google.com/p/bitcoinj/ bitcoinj
 cd bitcoinj
-git reset --hard cbbb1a2bf4d189732efe273ebf65ab2da14eaaa5   # Force yourself to the 0.8 release
+git reset --hard 410d4547a7dd20745f637313ed54d04d08d28687    # Force yourself to the 0.11 release
 mvn install
 ```
 
@@ -24,7 +24,7 @@ mvn install
 Add the following to your project.clj
 
 ```clojure
-[bitcljoin "0.2.0"]
+[bitcljoin "0.3.0"]
 ```
 
 Use library:
@@ -115,23 +115,41 @@ You can start this using start full which also returns the block chain.
 (start-full)
 ```
 
-## Lamina Channels
+## Channels
 
 [Lamina](https://github.com/ztellman/lamina) is a great new library for managing asyncronous communications. One of the key abstractions
 is the [Channel](https://github.com/ztellman/lamina/wiki/Channels-new) which can be thought of as a pub/sub system that looks a bit like a sequence.
 
 This is all experimental but I think this is a much better way of doing analytics on the BitCoin economy.
 
-We now create a lamina channel for both blocks and transactions if you start the full block chain downloader:
+If you were using this pre 0.3 please note that this has changed a bit. In particular we have a new namespace <tt>bitcoin.channels</tt>. Channels are also not created automatically.
+
 
 ```clojure
-(start-full) ; Starts the full block chain downloader which gives a more complete view of the bitcoin economy
+(require '[bitcoin.core :as btc])
+(use 'bitcoin.channels)
+(require '[lamina.core :as l])
 
-(lamina.core/take* 1 tx-channel) ;; get the first transaction off the channel
-(lamina.core/take* 1 block-channel) ;; get the first block off the channel
+(btc/start-full) ; Starts the full block chain downloader which gives a more complete view of the bitcoin economy
+
+(def txs (broadcast-txs)) ;; A channel of all new transactions. Returns Transaction objects straight from BitcoinJ
+(def clj-txs (txs->maps txs)) ;; A Channel of all transactions but returned as clojure maps
+(def dice (txs-for "1dice8EMZmqKvrGE4Qc9bUFf9PX3xaYDp"))
+(def new-blocks (blocks))
+
+
+(lamina.core/take* 1 txs) ;; get the first transaction off the channel
+(lamina.core/take* 1 new-blocks) ;; get the first block off the channel
 
 ; Lamina allows us to create a new channel using map* which works exactly like clojure's regular map except on channels
-(def block-time (lamina.core/map* #(.getTime %) block-channel)) ; Create a new channel containing all the timestamps of the blocks
+(def block-time (lamina.core/map* #(.getTime %) blocks)) ; Create a new channel containing all the timestamps of the blocks
+
+;; It is good practice to combine filter* and map* to process the data in the way you want
+
+;; e.g. to find all the addresses who receive the coinbase
+(->> (broadcast-txs)
+      (lamina.core/filter* btc/coin-base?) ;; Filter channel to only contain coinbase transactions
+      (lamina.core/map* #(btc/output->address (first (.getOutputs %))))) ;; Find the address of the first output
 ```
 
 
