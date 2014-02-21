@@ -127,21 +127,29 @@ If you were using this pre 0.3 please note that this has changed a bit. In parti
 
 ```clojure
 (require '[bitcoin.core :as btc])
-(require '[bitcoin.channels :as c])
+(use 'bitcoin.channels)
 (require '[lamina.core :as l])
 
 (btc/start-full) ; Starts the full block chain downloader which gives a more complete view of the bitcoin economy
 
-(def txs (c/broadcast-txs)) ;; A channel of all new transactions
-(def dice (c/txs-for "1dice8EMZmqKvrGE4Qc9bUFf9PX3xaYDp"))
-(def blocks (c/blocks))
+(def txs (broadcast-txs)) ;; A channel of all new transactions. Returns Transaction objects straight from BitcoinJ
+(def clj-txs (txs->maps txs)) ;; A Channel of all transactions but returned as clojure maps
+(def dice (txs-for "1dice8EMZmqKvrGE4Qc9bUFf9PX3xaYDp"))
+(def new-blocks (blocks))
 
 
 (lamina.core/take* 1 txs) ;; get the first transaction off the channel
-(lamina.core/take* 1 blocks) ;; get the first block off the channel
+(lamina.core/take* 1 new-blocks) ;; get the first block off the channel
 
 ; Lamina allows us to create a new channel using map* which works exactly like clojure's regular map except on channels
 (def block-time (lamina.core/map* #(.getTime %) blocks)) ; Create a new channel containing all the timestamps of the blocks
+
+;; It is good practice to combine filter* and map* to process the data in the way you want
+
+;; e.g. to find all the addresses who receive the coinbase
+(->> (broadcast-txs)
+      (lamina.core/filter* btc/coin-base?) ;; Filter channel to only contain coinbase transactions
+      (lamina.core/map* #(btc/output->address (first (.getOutputs %))))) ;; Find the address of the first output
 ```
 
 
