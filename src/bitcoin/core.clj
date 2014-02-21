@@ -251,6 +251,19 @@
 ;    :script (.getScriptBytes o)
     :address (output->address o)})
 
+(defn input->output
+  "attempts to find a connected output for a given input"
+  [i]
+  (if-let [op (.getOutpoint i)]
+    (.getConnectedOutput op)))
+
+(defn input->value
+  "attempts to find the value of a given input"
+  [i]
+  (if-let [o (input->output i)]
+    (.getValue o)
+    0))
+
 (defn input->map
   [i]
   (let [op (.getOutpoint i)]
@@ -261,10 +274,15 @@
        :index (.getIndex op)
        :address (str (.getFromAddress i))})))
 
+(defn tx-fees
+  "Don't trust this just yet"
+  [tx]
+  (- (reduce + (map #(input->value %) (.getInputs tx)))
+     (reduce + (map #(.getValue %) (.getOutputs tx)))))
+
 (defn tx->map
   "Turns a Transaction into a map"
   ([tx]
-   (println "inputs " (prn-str (.getInputs tx)))
    {:time (/ (.getTime (.getUpdateTime tx)) 1000)
     :outputs
       (map output->map
@@ -272,10 +290,33 @@
            (range (count (.getOutputs tx))))
     :inputs (map input->map (.getInputs tx))
     :confirmations (.getDepthInBlocks (.getConfidence tx))
+    ;:fees (tx-fees tx)
     :txid (str (.getHash tx))})
   ([sb tx]
    (let [block (.getHeader sb)]
      (merge (tx->map tx)
+            {:blockhash (.getHashAsString block)
+             :blocktime (.getTimeSeconds block)}))))
+
+(defn wallet-tx->map
+  "Turns a Wallets Transaction into a map"
+  ([wallet tx]
+   {:time (/ (.getTime (.getUpdateTime tx)) 1000)
+    :amount (.getValue tx wallet)
+    :details  (reduce #(assoc %
+                         (key %2)
+                         (reduce + (map :value (val %2)))) {}
+                (group-by :address
+                       (clojure.set/union
+                        (map #(assoc % :value (- (:value %)))
+                             (map output->map (filter #(not (.isMine % wallet)) (.getOutputs tx))))
+                        (map input->map (filter #(not (.isMine (.getConnectedOutput (.getOutpoint %)) wallet)) (.getInputs tx))))))
+    :confirmations (.getDepthInBlocks (.getConfidence tx))
+    ;:fees (tx-fees tx)
+    :txid (str (.getHash tx))})
+  ([wallet sb tx]
+   (let [block (.getHeader sb)]
+     (merge (wallet-tx->map wallet tx)
             {:blockhash (.getHashAsString block)
              :blocktime (.getTimeSeconds block)}))))
 
