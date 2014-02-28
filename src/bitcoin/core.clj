@@ -50,7 +50,7 @@
         (catch com.google.bitcoin.store.UnreadableWalletException e
           (let
               [w (create-wallet)
-               kp (create-keypair) ]
+               kp (create-keypair)]
             (add-keypair w kp)
             (.saveToFile w file)
             w)))))
@@ -333,7 +333,7 @@
      (.addEventListener pg
                         (proxy
                          [com.google.bitcoin.core.AbstractPeerEventListener][]
-                       (onTransaction [peer tx ] (f peer tx))))))
+                       (onTransaction [peer tx] (f peer tx))))))
 
 (defn on-coins-received
   "calls f with the transaction prev balance and new balance"
