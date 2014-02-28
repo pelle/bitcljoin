@@ -234,7 +234,7 @@
       :height (.getHeight sb)}))
 
 (defn sig->address [sig]
-  "Returns the address sgtring for an outputs script pubkey"
+  "Returns the address string for an outputs script pubkey"
   (try
     (if sig
       (str (.getToAddress sig (net))))
