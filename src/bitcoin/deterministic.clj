@@ -1,7 +1,6 @@
 (ns bitcoin.deterministic
   (:require [bitcoin.core :as btc])
   (:import (com.google.bitcoin.crypto HDKeyDerivation HDUtils DeterministicKey)
-           (com.google.bitcoin.core Base58)
            (java.security SecureRandom)
            (bitcoin.core Addressable)))
 
@@ -65,11 +64,11 @@
 (defn derive-from-path
   "Derive a key from a master key given a path"
   [mk path]
-
-  (if-let [items (clojure.string/split path #"/")]
-    (if (< (count items) 2)
-      mk
-      (reduce #(derive-key %1 (Long/parseLong %2)) mk (rest items)))))
+  (if (and path mk)
+    (let [items (clojure.string/split path #"/")]
+      (if (< (count items) 2)
+        mk
+        (reduce #(derive-key %1 (Long/parseLong %2)) mk (rest items))))))
 
 (defn ->pub-only
   "Returns a derived key with only the public key part"
@@ -77,5 +76,6 @@
   (.getPubOnly dk))
 
 (defn ->path
+  "Returns the path from the master key to the given key"
   [dk]
   (.getPath dk))
