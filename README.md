@@ -24,7 +24,7 @@ mvn install
 Add the following to your project.clj
 
 ```clojure
-[bitcljoin "0.3.0"]
+[bitcljoin "0.4.0"]
 ```
 
 Use library:
@@ -152,9 +152,58 @@ If you were using this pre 0.3 please note that this has changed a bit. In parti
       (lamina.core/map* #(btc/output->address (first (.getOutputs %))))) ;; Find the address of the first output
 ```
 
+## Deterministic Keys
+
+As of 0.4 we now have a clojure wrapper around BitcoinJ's Deterministic Key support. Deterministic Keys are based on [BIP32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki) and allows you to recreate a key hierarchy based on a single secret and public key pair.
+
+```clojure
+(use 'bitcoin.deterministic)
+
+(def mk (create-master-key)) ;; Creates the master key pair.
+
+;; To recreate the master key with the private key (For spending purposes) you need to save the private key bytes as well as the chain code.
+
+(def priv (->priv-bytes mk)) ;; Save this securely
+(def cc (->chain-code mk)) ;; Save this. It is required to create both private and public keys
+
+(recreate-master-key priv cc) ;; Recreate the actual master key
+
+;; You can create a public key version of the master key. This allows you to create addresses in the hierarchy but not spend outputs for it.
+
+(def pub (->pub-bytes mk))
 
 
-TODO:
+(recreate-master-pub-key pub cc) ;; Recreate the actual master key but only the public key
+
+
+;; Derive a key
+
+(def child (derive-key mk 2))
+
+;; Show the path of the hierarchy
+(->path child)
+# "M/2"
+
+;; Add a grand child
+(def grand-child (derive-key child 1))
+
+;; Show the path of the hierarchy
+(->path grand-child)
+# "M/2/1"
+
+;; Return the EC Keypair for use in signing of a Deterministic key
+(dk->kp child)
+
+;; Return bitcoin address for deterministic key
+
+(require '[bitcoin.core :as btc])
+
+(btc/->address child)
+
+```
+
+
+## TODO:
 
 * Transactions
 * Create transactions

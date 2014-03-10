@@ -1,4 +1,4 @@
-(defproject bitcljoin "0.3.0"
+(defproject bitcljoin "0.4.0-SNAPSHOT"
   :description "BitCoin library for Clojure"
   :dependencies [
     [org.clojure/clojure "1.5.1"]
