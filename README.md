@@ -191,6 +191,9 @@ As of 0.4 we now have a clojure wrapper around BitcoinJ's Deterministic Key supp
 (->path grand-child)
 # "M/2/1"
 
+;; Find the key for a particular path
+(derive-from-path mk "M/1/3")
+
 ;; Return the EC Keypair for use in signing of a Deterministic key
 (dk->kp child)
 
