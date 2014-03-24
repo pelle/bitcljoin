@@ -6,7 +6,7 @@
 
 (defn prodNet []  (com.google.bitcoin.core.NetworkParameters/prodNet))
 (defn testNet []  (com.google.bitcoin.core.NetworkParameters/testNet))
-(def network)
+(def ^:dynamic network)
 
 (defn net []
   (if (bound? (var network))
@@ -14,6 +14,9 @@
     (do
       (def network (prodNet))
       network)))
+
+(defn use-test-net []
+  (def network (testNet)))
 
 (def current-bc (atom nil))
 (def current-pg (atom nil))
