@@ -114,6 +114,12 @@
   ([name] (h2-full-block-store (net) name))
   ([network name] (com.google.bitcoin.store.H2FullPrunedBlockStore. network name 300000)))
 
+(defn pg-full-block-store
+  ([] (pg-full-block-store nil "bitcljoin" "" ""))
+  ([host-name db-name user-name password] (pg-full-block-store (net) host-name db-name user-name password 300000))
+  ([network host-name db-name user-name password depth] (com.google.bitcoin.store.PostgresFullPrunedBlockStore. network depth host-name db-name user-name password)))
+
+
 (defn block-chain
   ([] (block-chain (file-block-store)))
   ([block-store] (com.google.bitcoin.core.BlockChain. (net) block-store)))
