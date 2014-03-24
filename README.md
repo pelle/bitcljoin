@@ -24,7 +24,7 @@ mvn install
 Add the following to your project.clj
 
 ```clojure
-[bitcljoin "0.4.0"]
+[bitcljoin "0.4.1"]
 ```
 
 Use library:
