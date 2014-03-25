@@ -1,4 +1,5 @@
 (ns bitcoin.channels
+  (:use clojure.stacktrace)
   (:require [lamina.core :as lamina]
             [bitcoin.core :as btc]))
 
@@ -78,7 +79,7 @@
 (defn log-errors
   "Log all errors"
   [ch]
-  (lamina/on-error ch #(clojure.stacktrace/print-cause-trace %)))
+  (lamina/on-error ch #(print-cause-trace %)))
 
 (defn prn-all
   "prn content of channel"
