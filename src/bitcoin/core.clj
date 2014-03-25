@@ -214,10 +214,22 @@
   [tx]
   (map #(.getFromAddress %) (regular-inputs tx)))
 
+(defn sig->address [sig]
+  "Returns the address string for an outputs script pubkey"
+  (try
+    (if (and sig (.isSentToAddress sig))
+      (str (.getToAddress sig (net))))
+    (catch com.google.bitcoin.core.ScriptException e nil)))
+
+(defn output->address [o]
+  "Returns the address string for an outputs script pubkey"
+  (sig->address (.getScriptPubKey o)))
+
+
 (defn to-addresses
   "Get the from addresses for a transaction"
   [tx]
-  (set (map #(.getToAddress (.getScriptPubKey %)) (tx-outputs tx))))
+  (set (remove nil? (map output->address (tx-outputs tx)))))
 
 (defn my-addresses
   "Return all the addresses in the given wallet"
@@ -241,17 +253,6 @@
       :previousblockhash (str (.getPrevBlockHash block))
       :time (.getTimeSeconds block)
       :height (.getHeight sb)}))
-
-(defn sig->address [sig]
-  "Returns the address string for an outputs script pubkey"
-  (try
-    (if sig
-      (str (.getToAddress sig (net))))
-    (catch com.google.bitcoin.core.ScriptException e nil)))
-
-(defn output->address [o]
-  "Returns the address string for an outputs script pubkey"
-  (sig->address (.getScriptPubKey o)))
 
 (defn output->map
   [o i]
