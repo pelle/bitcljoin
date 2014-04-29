@@ -14,7 +14,7 @@
 (defn broadcast-txs
   "Returns a of new transactions being broadcast (not yet in the blockchain)"
   ([pg]
-   (let [ch (lamina/channel)]
+   (let [ch (lamina/permanent-channel)]
      (btc/on-tx-broadcast pg (fn [_ tx] (lamina/enqueue ch tx)))
      ch))
   ([] (broadcast-txs @btc/current-pg)))
@@ -47,7 +47,7 @@
 (defn confirmed-txs
   "Returns a of new transactions entering the blockchain"
   ([bc]
-   (let [ch (lamina/channel)]
+   (let [ch (lamina/permanent-channel)]
      (.addListener bc (proxy
                         [com.google.bitcoin.core.BlockChainListener][]
                         (isTransactionRelevant [tx] true)
@@ -59,7 +59,7 @@
 (defn blocks
   "Returns a of new blocks entering the blockchain"
   ([bc]
-   (let [ch (lamina/channel)]
+   (let [ch (lamina/permanent-channel)]
      (.addListener bc (proxy
                         [com.google.bitcoin.core.BlockChainListener][]
                         (isTransactionRelevant [tx] true)
