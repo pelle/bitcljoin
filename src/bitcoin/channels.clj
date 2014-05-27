@@ -49,7 +49,7 @@
   ([bc]
    (let [ch (lamina/permanent-channel)]
      (.addListener bc (proxy
-                        [com.google.bitcoin.core.BlockChainListener][]
+                        [com.google.bitcoin.core.AbstractBlockChainListener][]
                         (isTransactionRelevant [tx] true)
                         (receiveFromBlock [tx _ _ _] (lamina/enqueue ch tx))
                         (notifyNewBestBlock [block] nil)))
@@ -61,7 +61,7 @@
   ([bc]
    (let [ch (lamina/permanent-channel)]
      (.addListener bc (proxy
-                        [com.google.bitcoin.core.BlockChainListener][]
+                        [com.google.bitcoin.core.AbstractBlockChainListener][]
                         (isTransactionRelevant [tx] true)
                         (receiveFromBlock [tx _ _ _] nil)
                         (notifyNewBestBlock [block] (lamina/enqueue ch block))))
