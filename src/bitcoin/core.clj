@@ -201,18 +201,24 @@
   [tx]
   (filter #(not (coin-base? %)) (tx-inputs tx)))
 
+(defn input->address [i]
+  (try
+    (.getFromAddress i)
+    (catch com.google.bitcoin.core.ScriptException e nil)))
+
 (defn input-addresses
   "Get the from addresses for a transaction"
   [tx]
-  (map #(.getFromAddress %) (regular-inputs tx)))
+  (remove nil? (map input->address (regular-inputs tx))))
 
 (defn tx-outputs [tx]
   (.getOutputs tx))
 
+;; This is a essentially a duplicate of input-addresses can't remember why they are both there
 (defn from-addresses
   "Get the from addresses for a transaction"
   [tx]
-  (map #(.getFromAddress %) (regular-inputs tx)))
+  (input-addresses tx))
 
 (defn sig->address [sig]
   "Returns the address string for an outputs script pubkey"
