@@ -11,7 +11,7 @@ If you're interested please email me.
 Add the following to your project.clj
 
 ```clojure
-[bitcljoin "0.4.5"]
+[bitcljoin "0.5.0-SNAPSHOT"]
 ```
 
 Use library:
