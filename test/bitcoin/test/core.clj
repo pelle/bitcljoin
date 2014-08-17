@@ -8,7 +8,7 @@
 (deftest should-have-default-net
   (is (= (.getId (net)) "org.bitcoin.production") "Should default to prodNet"))
 
-(deftest should-create-key 
+(deftest should-create-key
   (let [kp (create-keypair)]
     (is (instance? com.google.bitcoin.core.ECKey kp) "Should create key")))
 
@@ -29,28 +29,28 @@
 (deftest should-create-wallet
   (let [wal (create-wallet)]
     (is (instance? com.google.bitcoin.core.Wallet wal))
-    (let [kc (keychain wal)]
+    (let [kc (imported-keys wal)]
       (is (= 0 (count kc))))))
 
 (deftest should-add-keypair
   (let [kp (create-keypair)
         wal (add-keypair (create-wallet) kp)]
     (is (instance? com.google.bitcoin.core.Wallet wal))
-    (let [kc (keychain wal)]
+    (let [kc (imported-keys wal)]
       (is (= 1 (count kc)))
       (is (= kp (first kc))))))
-  
+
 
 (deftest should-create-and-load-wallet
   (let [ filename "./test.wallet"
          _ (delete-file (as-file filename) true)
          wal (open-wallet filename)]
     (is (instance? com.google.bitcoin.core.Wallet wal))
-    (let [kc (keychain wal)
+    (let [kc (imported-keys wal)
           kp (first kc)]
       (is (= 1 (count kc)))
       (is (instance? com.google.bitcoin.core.ECKey kp)
-      (is (= (str kp) (str (first (keychain (open-wallet filename))))))))))
+      (is (= (str kp) (str (first (imported-keys (open-wallet filename))))))))))
 
 
 (deftest should-convert-nano-to-btc

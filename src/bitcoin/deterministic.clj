@@ -25,20 +25,17 @@
 
 (defn ->pub-bytes
   [dk]
-  (.getPubKeyBytes dk))
+  (.getPubKey dk))
 
 (defn ->chain-code
   "Get the chain key used for given deterministic key"
   [dk]
   (.getChainCode dk))
 
-(defn dk->kp [dk]
-  (.toECKey dk))
-
-(extend-type com.google.bitcoin.crypto.DeterministicKey btc/Addressable
-  (btc/->address
-    ([dk] (btc/->address dk (btc/net)))
-    ([dk network] (.toAddress (dk->kp dk) network))))
+(defn
+  ^{:deprecated "DeterministicKey is now a subclass of ECKey so this is no longer needed"}
+  dk->kp [dk]
+  dk)
 
 (defn serialize-pub [dk]
   (.serializePubB58 dk))

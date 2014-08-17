@@ -1,8 +1,8 @@
-(defproject bitcljoin "0.4.5"
+(defproject bitcljoin "0.5.0-SNAPSHOT"
   :description "BitCoin library for Clojure"
   :dependencies [
     [org.clojure/clojure "1.5.1"]
-    [com.google/bitcoinj "0.11.2"]
+    [com.google/bitcoinj "0.12-SNAPSHOT"]
     [com.h2database/h2 "1.3.170"]
     [lamina "0.5.0"]
     [bux "0.2.1"]]

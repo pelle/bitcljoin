@@ -34,17 +34,30 @@
   [s]
   (.getKey (com.google.bitcoin.core.DumpedPrivateKey. network s)))
 
-(defn keychain [w]
-  (.getKeys w))
+(defn imported-keys
+  "Returns a list of the non-deterministic keys that have been imported into the wallet, or the empty list if none."
+  [w]
+  (.getImportedKeys w))
 
+(defn
+  ^{:deprecated "keychain is deprecated as the structure of bitcoinj's Wallet class has changed. Use imported-keys instead"}
+  keychain [w]
+  (imported-keys w))
 
 (defn create-wallet
   ([] (create-wallet (net)))
   ([network] (com.google.bitcoin.core.Wallet. network)))
 
-(defn add-keypair [wallet kp]
-  (.addKey wallet kp)
+
+(defn import-keypair
+  "Imports a keypair into the wallet"
+  [wallet kp]
+  (.importKey wallet kp)
   wallet)
+
+(defn ^{:deprecated "Use import-keypair instead of add-keypair"}
+  add-keypair [wallet kp]
+  (import-keypair wallet kp))
 
 (defn open-wallet [filename]
   (let [file (as-file filename)]
@@ -240,7 +253,7 @@
 (defn my-addresses
   "Return all the addresses in the given wallet"
   [wallet]
-  (map ->address (keychain wallet)))
+  (map ->address (imported-keys wallet)))
 
 (defn for-me?
   "Does this transaction belong to our wallet?"
