@@ -32,9 +32,9 @@
     (let [kc (imported-keys wal)]
       (is (= 0 (count kc))))))
 
-(deftest should-add-keypair
+(deftest should-import-keypair
   (let [kp (create-keypair)
-        wal (add-keypair (create-wallet) kp)]
+        wal (import-keypair (create-wallet) kp)]
     (is (instance? com.google.bitcoin.core.Wallet wal))
     (let [kc (imported-keys wal)]
       (is (= 1 (count kc)))
